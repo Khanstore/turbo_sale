@@ -69,18 +69,18 @@ class SaleOrder(models.Model):
 
             invoice = order._create_invoices()
             invoice.action_post()
-            # return invoice.action_register_payment()
-            return {
-                'name': 'Register Payment',
-                'type': 'ir.actions.act_window',
-                'res_model': 'account.payment.register',
-                'view_mode': 'form',
-                'target': 'new',
-                'context': {
-                    'active_model': 'account.move',
-                    'active_ids': invoice.ids,
-                }
-            }
+            # If COD, you might want to make the payment directly
+            if data and data.get("COD"):
+                # Here you can implement logic to handle COD payments
+                payment=self.env['account.payment'].create({
+                    'payment_type': 'inbound',
+
+                    'partner_id': order.partner_id.id,
+                    'amount': data.get("COD Amount", order.amount_total),
+                    'payment_method_id': self.env.ref('account.account_payment_method_manual_in').id,
+                    'journal_id': order.carrier_id.related_journal.id if order.carrier_id and order.carrier_id.related_journal else self.env['account.journal'].search([('type', '=', 'bank')], limit=1).id,
+                })
+                return payment
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'

@@ -1,10 +1,11 @@
 
 {
     "name": "Turbo Sale",
-    "version": '18.0.1.1.1',
+    "version": '18.0.1.0.1',
+    # last dev 2025-09-05
     "summary": "One-click sales processing with stock and payment prompts.",
     "author": "SM Ashraf",
-    "website": "https://www.eagle_it_solutions.com",
+    "website": "https://www.eagle-erp.com/",
     "category": "Sales",
     "description": """
         Turbo Sale Module
@@ -20,5 +21,6 @@
     ],
     "installable": True,
     "application": True,
+    "image": "static/description/banner.jpg",
     "license": "AGPL-3",
 }

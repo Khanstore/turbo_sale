@@ -33,18 +33,31 @@ class ForceDeliveryWizard(models.TransientModel):
             move.quantity = move.product_uom_qty
         picking.button_validate()
         sale_order = self.env['sale.order'].browse(self.env.context.get('active_ids'))
-        sale_order._force_delivery_and_invoice()
-        # return {
-        #     'name': 'Register Payment',
-        #     'type': 'ir.actions.act_window',
-        #     'res_model': 'account.payment.register',
-        #     'view_mode': 'form',
-        #     'target': 'new',
-        #     'context': {
-        #         'active_model': 'account.move',
-        #         'active_ids': invoice.ids,
-        #     }
-        # }
+        payment=sale_order._force_delivery_and_invoice({"COD":self.is_cash_on_delivery, "COD Amount":self.cod_amount if self.is_cash_on_delivery else 0.0})
+
+        if payment :
+            return {
+                'name': 'Payment',
+                'type': 'ir.actions.act_window',
+                'res_model': 'account.payment',
+                'view_mode': 'form',
+                'res_id': payment.id,  # <--- existing record
+                'target': 'current',
+            }
+        else:
+            return {
+                'name': 'Register Payment',
+                'type': 'ir.actions.act_window',
+                'res_model': 'account.payment.register',
+                'view_mode': 'form',
+                'target': 'new',
+                'context': {
+                    'active_model': 'account.move',
+                    'active_ids': sale_order.invoice_ids.id,
+                    'default_journal_id': self.carrier_id.related_journal.id,
+
+                }
+            }
 
         # return {
         #     'name': 'Cash on Delivery?',
