@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="report_saleorder_document" inherit_id="sale.report_saleorder_document">
+    <xpath expr="//div[@class='oe_structure' and @t-if='not doc.signature']" position="before">
+        <div class="my-warning">
+            <div class="row text-end" t-if="doc.cod_amount &gt; 0">
+        <strong style="color:red; border-bottom: 2px solid red; background-color: #FFFF00;">
+            Condition: <t t-esc="doc.cod_amount"/> And Charge
+        </strong>
+    </div>
+        </div>
+    </xpath>
+</template>
+</odoo>

@@ -74,8 +74,11 @@ class SaleOrder(models.Model):
                 # Here you can implement logic to handle COD payments
                 payment=self.env['account.payment'].create({
                     'payment_type': 'inbound',
+                    'memo': invoice.name,
+                    'invoice_ids': [(4, invoice.id)],
 
                     'partner_id': order.partner_id.id,
+
                     'amount': data.get("COD Amount", order.amount_total),
                     'payment_method_id': self.env.ref('account.account_payment_method_manual_in').id,
                     'journal_id': order.carrier_id.related_journal.id if order.carrier_id and order.carrier_id.related_journal else self.env['account.journal'].search([('type', '=', 'bank')], limit=1).id,
@@ -98,6 +101,7 @@ class StockPicking(models.Model):
                 picking.tracking_url_link = picking.carrier_tracking_ref or ''
 
     def button_validate(self):
+
         res = super(StockPicking, self).button_validate()
         if self.is_cash_on_delivery:
             self.message_post(body="This picking is confirmed as Cash on Delivery with amount: %s" % self.cod_amount)

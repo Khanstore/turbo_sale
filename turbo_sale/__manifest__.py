@@ -17,7 +17,9 @@
     "data": [
         "views/sale_order_view.xml",
         "views/force_delivery_wizard_view.xml",
-        "security/ir.model.access.csv"
+        "security/ir.model.access.csv",
+        "views/stock_picking.xml",
+        "views/templates.xml",
     ],
     "installable": True,
     "application": True,
