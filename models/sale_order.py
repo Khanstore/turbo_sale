@@ -7,6 +7,24 @@ class SaleOrder(models.Model):
     is_cash_on_delivery = fields.Boolean('Cash on Delivery')
     cod_amount = fields.Float('Cash on Delivery Amount', help="Amount to be collected on delivery.")
 
+    # This field will be True if all pickings and invoices are finished
+    is_order_completed = fields.Boolean(compute='_compute_is_order_completed', store=False)
+
+    @api.depends('picking_ids.state', 'invoice_ids.state')
+    def _compute_is_order_completed(self):
+        for order in self:
+            # Check if there are related records
+            has_pickings = bool(order.picking_ids)
+            has_invoices = bool(order.invoice_ids)
+
+            # Check if all pickings are 'done' or 'cancel'
+            all_pickings_done = all(p.state in ['done', 'cancel'] for p in order.picking_ids)
+
+            # Check if all invoices are 'posted' or 'cancel'
+            all_invoices_done = all(i.state in ['posted', 'cancel'] for i in order.invoice_ids)
+
+            # Set the field to True only if records exist and are all completed
+            order.is_order_completed = has_pickings and has_invoices and all_pickings_done and all_invoices_done
     def action_confirm_all_with_prompts(self):
         for order in self:
             if order.state == 'draft':
@@ -67,8 +85,13 @@ class SaleOrder(models.Model):
                     picking.action_assign()
                 picking.button_validate()
 
-            invoice = order._create_invoices()
-            invoice.action_post()
+            if order.invoice_status == 'to invoice':
+                invoice = order._create_invoices()
+
+            invoices=order.invoice_ids
+            for invoice in invoices:
+                if invoice.state != 'posted':
+                    invoice.action_post()
             # If COD, you might want to make the payment directly
             if data and data.get("COD"):
                 # Here you can implement logic to handle COD payments
@@ -76,13 +99,32 @@ class SaleOrder(models.Model):
                     'payment_type': 'inbound',
                     'memo': invoice.name,
                     'invoice_ids': [(4, invoice.id)],
+                    'partner_type': 'customer',
 
                     'partner_id': order.partner_id.id,
 
-                    'amount': data.get("COD Amount", order.amount_total),
+                    'amount': data.get("COD Amount", sum(invoices.mapped('amount_total'))),
+
                     'payment_method_id': self.env.ref('account.account_payment_method_manual_in').id,
                     'journal_id': order.carrier_id.related_journal.id if order.carrier_id and order.carrier_id.related_journal else self.env['account.journal'].search([('type', '=', 'bank')], limit=1).id,
                 })
+                payment.action_post()
+
+                # 3. Batch Reconcile
+                # Get the receivable line from the payment
+                pay_lines = payment.move_id.line_ids.filtered(
+                    lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled
+                )
+
+                # Get all receivable lines from all related invoices
+                inv_lines = invoices.line_ids.filtered(
+                    lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled
+                )
+
+                # Combine and reconcile them all at once
+                if pay_lines and inv_lines:
+                    (pay_lines + inv_lines).reconcile()
+
                 return payment
 
 class StockPicking(models.Model):

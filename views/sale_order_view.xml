@@ -9,12 +9,16 @@
             </field>
             <xpath expr="//header" position="inside">
                 <button name="action_confirm_all_with_prompts"
-                        string="Turbo Confirm"
-                        type="object"
-                        class="btn-primary"
-                        groups="sales_team.group_sale_manager"
-                />
+            string="Turbo Confirm"
+            type="object"
+            invisible="is_order_completed"
+            class="btn-primary"
+            groups="sales_team.group_sale_manager"
+    />
             </xpath>
+            <xpath expr="//sheet" position="inside">
+            <field name="is_order_completed" invisible="1"/>
+        </xpath>
         </field>
     </record>
 </odoo>
