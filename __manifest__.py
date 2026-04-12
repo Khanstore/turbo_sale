@@ -16,6 +16,7 @@
     "depends": ["sale_management", "stock", "account"],
     "data": [
         "views/sale_order_view.xml",
+        "views/purchase_order_view.xml",
         "views/force_delivery_wizard_view.xml",
         "security/ir.model.access.csv",
         "views/stock_picking.xml",
